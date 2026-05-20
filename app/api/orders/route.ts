@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateOrderNumber } from "@/lib/utils";
+import { sendOrderConfirmationEmail } from "@/lib/email-service";
 import { sanitizeInput, apiGeneralRateLimit, getClientIp, rateLimitResponse, isValidAmount, generateTransactionReference } from "@/lib/security";
 
 export async function GET(request: NextRequest) {
@@ -239,6 +240,10 @@ export async function POST(request: NextRequest) {
 
       return newOrder;
     });
+
+    sendOrderConfirmationEmail(order.id).catch((err) =>
+      console.error("Failed to send order confirmation email:", err)
+    );
 
     return NextResponse.json({ order }, { status: 201 });
   } catch (error: any) {

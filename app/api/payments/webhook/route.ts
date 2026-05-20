@@ -5,6 +5,13 @@ import { emitirNFe } from "@/lib/nuvemfiscal";
 import { webhookRateLimit, getClientIp, sanitizeInput, rateLimitResponse } from "@/lib/security";
 import crypto from "crypto";
 
+function getTierFromPoints(points: number): string {
+  if (points >= 1000) return "DIAMANTE";
+  if (points >= 500) return "OURO";
+  if (points >= 100) return "PRATA";
+  return "BRONZE";
+}
+
 function validateMPSignature(request: Request, body: any): boolean {
   const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
   if (!secret) return true;
@@ -166,9 +173,10 @@ async function processPayment(paymentData: any) {
       }
     });
 
+    await awardLoyaltyPoints(order).catch((err) => console.error("[WEBHOOK] Loyalty error:", err));
+
     emitirNFe(order.id).catch((err) => console.error("[WEBHOOK] NFe error:", err));
     sendOrderConfirmationEmail(order.id).catch((err) => console.error("[WEBHOOK] Email error:", err));
-
   } else if (mpStatus === "REJECTED" || mpStatus === "CANCELLED" || mpStatus === "REFUNDED") {
     await prisma.order.update({
       where: { id: order.id },
@@ -191,4 +199,39 @@ function mapPaymentMethod(type: string): string {
     account_money: "PIX",
   };
   return map[type] || "PIX";
+}
+
+async function awardLoyaltyPoints(order: { id: string; userId: string; totalAmount: number }) {
+  const pointsEarned = Math.floor(order.totalAmount / 10);
+  if (pointsEarned <= 0) return;
+
+  let loyalty = await prisma.loyaltyPoints.findUnique({ where: { userId: order.userId } });
+
+  if (!loyalty) {
+    loyalty = await prisma.loyaltyPoints.create({
+      data: { userId: order.userId, points: 0, totalEarned: 0, totalSpent: 0, tier: "BRONZE" },
+    });
+  }
+
+  const newPoints = loyalty.points + pointsEarned;
+
+  await prisma.$transaction([
+    prisma.loyaltyPoints.update({
+      where: { id: loyalty.id },
+      data: {
+        points: newPoints,
+        totalEarned: { increment: pointsEarned },
+        tier: getTierFromPoints(newPoints),
+      },
+    }),
+    prisma.loyaltyHistory.create({
+      data: {
+        loyaltyId: loyalty.id,
+        points: pointsEarned,
+        type: "EARNED",
+        description: `${pointsEarned} pontos ganhos no pedido #${order.id.slice(-8)}`,
+        orderId: order.id,
+      },
+    }),
+  ]);
 }

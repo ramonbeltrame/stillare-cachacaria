@@ -4,17 +4,38 @@ import { auth } from "@/lib/auth";
 import { productSchema } from "@/lib/validations";
 import { cacheHeaders } from "@/lib/cache";
 
+// Map alcohol range to filter
+function getAlcoholRange(range: string): { gte?: number; lte?: number } | null {
+  switch (range) {
+    case "38-40":
+      return { gte: 38, lte: 40 };
+    case "40-42":
+      return { gte: 40, lte: 42 };
+    case "42+":
+      return { gte: 42 };
+    default:
+      return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "12")));
-    const category = searchParams.get("category");
-    const search = searchParams.get("search");
-    const sort = searchParams.get("sort") || "createdAt";
-    const featured = searchParams.get("featured");
-    const minPrice = searchParams.get("minPrice");
-    const maxPrice = searchParams.get("maxPrice");
+
+    // Accept both frontend param names (pt-BR) and API param names (en)
+    const page = Math.max(1, parseInt(searchParams.get("pagina") || searchParams.get("page") || "1"));
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limite") || searchParams.get("limit") || "12")));
+    const category = searchParams.get("categoria") || searchParams.get("category");
+    const search = searchParams.get("busca") || searchParams.get("search");
+    const sort = searchParams.get("ordenar") || searchParams.get("sort") || "relevance";
+    const featured = searchParams.get("destaque") || searchParams.get("featured");
+    const minPrice = searchParams.get("precoMin") || searchParams.get("minPrice");
+    const maxPrice = searchParams.get("precoMax") || searchParams.get("maxPrice");
+
+    // New filters
+    const volumeRaw = searchParams.getAll("volume");
+    const alcoholRaw = searchParams.getAll("alcohol");
+    const madeiraRaw = searchParams.getAll("madeira");
 
     const where: any = { isActive: true };
 
@@ -40,43 +61,118 @@ export async function GET(request: NextRequest) {
       if (maxPrice) where.price.lte = parseFloat(maxPrice);
     }
 
-    const orderBy: any = {};
-    switch (sort) {
-      case "price_asc":
-        orderBy.price = "asc";
-        break;
-      case "price_desc":
-        orderBy.price = "desc";
-        break;
-      case "name_asc":
-        orderBy.name = "asc";
-        break;
-      case "name_desc":
-        orderBy.name = "desc";
-        break;
-      case "newest":
-        orderBy.createdAt = "desc";
-        break;
-      case "oldest":
-        orderBy.createdAt = "asc";
-        break;
-      default:
-        orderBy.createdAt = "desc";
+    // Volume filter (multiple values = OR)
+    if (volumeRaw.length > 0) {
+      const volumes = volumeRaw.map(Number).filter((n) => !isNaN(n));
+      if (volumes.length > 0) {
+        where.volumeMl = { in: volumes };
+      }
     }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
+    // Alcohol percentage filter (multiple ranges = OR)
+    if (alcoholRaw.length > 0) {
+      const alcoholConditions: any[] = [];
+      for (const range of alcoholRaw) {
+        const filter = getAlcoholRange(range);
+        if (filter) alcoholConditions.push({ alcoholPercentage: filter });
+      }
+      if (alcoholConditions.length > 0) {
+        where.AND = [...(where.AND || []), { OR: alcoholConditions }];
+      }
+    }
+
+    // Madeira filter (search in name + description + madeira field)
+    if (madeiraRaw.length > 0) {
+      const madeiraConditions: any[] = [];
+      for (const m of madeiraRaw) {
+        madeiraConditions.push({ madeira: { contains: m, mode: "insensitive" } });
+        madeiraConditions.push({ name: { contains: m, mode: "insensitive" } });
+        madeiraConditions.push({ description: { contains: m, mode: "insensitive" } });
+      }
+      where.AND = [...(where.AND || []), { OR: madeiraConditions }];
+    }
+
+    // Sort / Order by
+    let orderBy: any = { createdAt: "desc" };
+    switch (sort) {
+      case "price_asc":
+      case "menor_preco":
+        orderBy = { price: "asc" };
+        break;
+      case "price_desc":
+      case "maior_preco":
+        orderBy = { price: "desc" };
+        break;
+      case "name_asc":
+        orderBy = { name: "asc" };
+        break;
+      case "name_desc":
+        orderBy = { name: "desc" };
+        break;
+      case "newest":
+        orderBy = { createdAt: "desc" };
+        break;
+      case "oldest":
+        orderBy = { createdAt: "asc" };
+        break;
+      case "relevance":
+      default:
+        orderBy = { createdAt: "desc" };
+    }
+
+    // Bestsellers sort requires post-fetch ordering by order count
+    const isBestseller = sort === "bestsellers" || sort === "mais_vendidos";
+
+    let products: any[] = [];
+    let total = 0;
+
+    if (isBestseller) {
+      // For bestsellers, fetch all matching products first, then sort by order frequency
+      const allProducts = await prisma.product.findMany({
         where,
         include: {
           category: true,
           images: { orderBy: { displayOrder: "asc" } },
         },
-        orderBy,
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.product.count({ where }),
-    ]);
+      });
+
+      // Count how many orders contain each product
+      const productIds = allProducts.map((p) => p.id);
+      const orderItems = await prisma.orderItem.findMany({
+        where: { productId: { in: productIds } },
+        select: { productId: true },
+      });
+
+      const orderCountMap: Record<string, number> = {};
+      for (const item of orderItems) {
+        orderCountMap[item.productId] = (orderCountMap[item.productId] || 0) + 1;
+      }
+
+      // Sort by order count descending, then by createdAt for products with no orders
+      allProducts.sort((a, b) => {
+        const countA = orderCountMap[a.id] || 0;
+        const countB = orderCountMap[b.id] || 0;
+        if (countB !== countA) return countB - countA;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+
+      total = allProducts.length;
+      products = allProducts.slice((page - 1) * limit, page * limit);
+    } else {
+      [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          include: {
+            category: true,
+            images: { orderBy: { displayOrder: "asc" } },
+          },
+          orderBy,
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.product.count({ where }),
+      ]);
+    }
 
     return NextResponse.json(
       {

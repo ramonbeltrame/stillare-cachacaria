@@ -21,6 +21,7 @@ interface ProductCardProps {
   alcoholPercentage: number | null;
   stock: number;
   isFeatured?: boolean;
+  product?: any; // Accept product object as single prop for compatibility
 }
 
 export function ProductCard({
@@ -61,7 +62,7 @@ export function ProductCard({
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.3 }}
       className={cn(
-        "group relative flex flex-col rounded-xl border border-amber-500/20 bg-card overflow-hidden",
+        "group relative flex flex-col rounded-xl border border-amber-500/20 bg-[#1a0f07] overflow-hidden",
         "transition-shadow duration-300 hover:shadow-lg hover:shadow-amber-500/5 hover:border-amber-500/40",
         isSoldOut && "opacity-70"
       )}
@@ -139,5 +140,23 @@ export function ProductCard({
         </Button>
       </div>
     </motion.div>
+  );
+}
+
+// Default export for compatibility: accepts { product } as single prop
+export default function ProductCardWrapper({ product }: { product: any }) {
+  const img = product.images?.find((i: any) => i.isPrimary)?.imageUrl || product.images?.[0]?.imageUrl || null;
+  return (
+    <ProductCard
+      id={product.id}
+      name={product.name}
+      slug={product.slug}
+      price={product.price}
+      imageUrl={img}
+      volumeMl={product.volumeMl ?? null}
+      alcoholPercentage={product.alcoholPercentage ?? null}
+      stock={product.stock}
+      isFeatured={product.isFeatured}
+    />
   );
 }

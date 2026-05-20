@@ -241,20 +241,27 @@ export default function HomePage() {
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {featuredProducts.slice(0, 8).map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  slug={product.slug}
-                  price={product.price}
-                  imageUrl={product.imageUrl ?? null}
-                  volumeMl={product.volumeMl ?? null}
-                  alcoholPercentage={product.alcoholContent ?? null}
-                  stock={product.stock}
-                  isFeatured={product.featured ?? false}
-                />
-              ))}
+              {featuredProducts.slice(0, 8).map((product: any) => {
+                const img =
+                  product.images?.find((i: any) => i.isPrimary)?.imageUrl ||
+                  product.images?.[0]?.imageUrl ||
+                  product.imageUrl ||
+                  null;
+                return (
+                  <ProductCard
+                    key={product.id}
+                    id={product.id}
+                    name={product.name}
+                    slug={product.slug}
+                    price={product.price}
+                    imageUrl={img}
+                    volumeMl={product.volumeMl ?? null}
+                    alcoholPercentage={product.alcoholPercentage ?? product.alcoholContent ?? null}
+                    stock={product.stock}
+                    isFeatured={product.isFeatured ?? product.featured ?? false}
+                  />
+                );
+              })}
             </div>
             <div className="text-center mt-10">
               <Link href="/produtos">

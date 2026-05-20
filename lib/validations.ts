@@ -76,6 +76,7 @@ export const productSchema = z.object({
   cfop: z.string().default("5102"),
   volumeMl: z.number().int().positive().optional(),
   alcoholPercentage: z.number().positive().optional(),
+  madeira: z.string().optional(),
   weightGrams: z.number().int().positive().optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),

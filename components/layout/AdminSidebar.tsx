@@ -15,6 +15,8 @@ import {
   ExternalLink,
   Percent,
   Image,
+  Award,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,8 +26,10 @@ const navItems = [
   { href: "/admin/pedidos", label: "Pedidos", icon: ShoppingCart },
   { href: "/admin/clientes", label: "Clientes", icon: Users },
   { href: "/admin/cupons", label: "Cupons", icon: Percent },
+  { href: "/admin/fidelidade", label: "Fidelidade", icon: Award },
   { href: "/admin/blog", label: "Blog", icon: FileText },
   { href: "/admin/imagens", label: "Imagens", icon: Image },
+  { href: "/admin/emails", label: "E-mails", icon: Mail },
   { href: "/admin/notas-fiscais", label: "Notas Fiscais", icon: FileText },
   { href: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
   { href: "/admin/configuracoes", label: "Configurações", icon: Settings },

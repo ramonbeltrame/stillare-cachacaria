@@ -34,6 +34,7 @@ interface Product {
   stock: number;
   volumeMl?: number | null;
   alcoholPercentage?: number | null;
+  madeira?: string | null;
   weightGrams?: number | null;
   images: ProductImage[];
   category: { name: string; slug: string } | null;
@@ -83,7 +84,7 @@ export function ProductDetailClient() {
     async function fetchRelated() {
       if (!product) return;
       try {
-        const res = await fetch(`/api/products?category=${product.category?.slug || ""}&limit=4`);
+        const res = await fetch(`/api/products/${product.id}/related`);
         if (res.ok) {
           const data = await res.json();
           setRelatedProducts(Array.isArray(data) ? data : data.products || []);
@@ -154,8 +155,58 @@ export function ProductDetailClient() {
   const isSoldOut = product.stock === 0;
   const isLowStock = product.stock > 0 && product.stock <= 5;
   const primaryImage = product.images?.[selectedImage]?.imageUrl || null;
+
+  function getHarmonizacao(): string {
+    const nome = product?.name?.toLowerCase() || "";
+    const madeira = product?.madeira?.toLowerCase() || "";
+    if (madeira.includes("carvalho europeu") || nome.includes("carvalho europeu"))
+      return "Queijos maturados, carnes grelhadas, chocolate amargo";
+    if (madeira.includes("amburana") || nome.includes("amburana"))
+      return "Sobremesas com canela, frutas secas, queijos azuis";
+    if (madeira.includes("bourbon") || madeira.includes("carvalho americano") || nome.includes("bourbon"))
+      return "Charutos, chocolate 70%, frutas vermelhas";
+    if (madeira.includes("jequitibá") || nome.includes("jequitiba"))
+      return "Peixes grelhados, risotos leves, saladas com frutas";
+    return "Caipirinha, frutos do mar, saladas";
+  }
+
+  function getMadeiraStory(): string {
+    const madeira = product?.madeira;
+    const nome = product?.name?.toLowerCase() || "";
+    if (product?.longDescription && madeira) {
+      return product.longDescription;
+    }
+    if (madeira?.toLowerCase().includes("carvalho europeu"))
+      return "O Carvalho Europeu (Quercus petraea) é a madeira mais nobre do mundo dos destilados. De crescimento lento e grãos finos, confere coloração dourada marcante, notas de frutas secas, figo maduro e mel. A Stillare seleciona barris de fornecedores franceses com no mínimo 24 meses de cura.";
+    if (madeira?.toLowerCase().includes("amburana"))
+      return "A Amburana (Amburana cearensis) é uma madeira tipicamente brasileira, conhecida como cerejeira ou cumaru. Confere à cachaça um dulçor natural inconfundível, com notas marcantes de canela e baunilha. É uma das madeiras mais aromáticas utilizadas no envelhecimento.";
+    if (madeira?.toLowerCase().includes("bourbon") || madeira?.toLowerCase().includes("carvalho americano"))
+      return "O Carvalho Americano (Quercus alba) é mais intenso que o europeu. Quando os barris são ex-Bourbon, a madeira já impregnada de whiskey adiciona camadas de complexidade — notas de baunilha, coco e caramelo. Os barris da Stillare Bourbon vêm diretamente de destilarias do Kentucky.";
+    if (madeira?.toLowerCase().includes("jequitibá"))
+      return "O Jequitibá Rosa (Cariniana legalis) é uma madeira brasileira de personalidade sutil. Confere suavidade excepcional e notas florais delicadas. É uma das madeiras mais elegantes para o envelhecimento, ideal para quem aprecia cachaças mais leves.";
+    const desc = product?.longDescription || product?.description || "";
+    if (nome.includes("prata") || nome.includes("classica") || nome.includes("tradicional"))
+      return "Esta cachaça não passa por envelhecimento em madeira, preservando as características originais da destilação. Cristalina e pura, é a expressão mais autêntica da cana-de-açúcar.";
+    return desc || "A madeira utilizada no envelhecimento é cuidadosamente selecionada para conferir as características sensoriais desejadas. Cada barril conta uma história diferente.";
+  }
+
+  function getSugestaoConsumo(): string {
+    const nome = product?.name?.toLowerCase() || "";
+    const madeira = product?.madeira?.toLowerCase() || "";
+    if (madeira.includes("bourbon") || madeira.includes("carvalho americano") || nome.includes("bourbon"))
+      return "Aprecie pura, em temperatura ambiente (16-20°C), em copo do tipo snifter ou tulipa. Sirva 30-50ml e aprecie lentamente. Evite gelo para não mascarar os aromas complexos.";
+    if (madeira.includes("carvalho europeu") || madeira.includes("amburana") || nome.includes("blend") || nome.includes("premium"))
+      return "Versátil: excelente tanto pura quanto em coquetéis premium. Para drinks, experimente um Old Fashioned de cachaça. Pura, sirva em copo tulipa a 16-18°C.";
+    if (nome.includes("prata") || nome.includes("classica") || nome.includes("tradicional") || nome.includes("mini"))
+      return "Ideal para caipirinhas e drinks refrescantes. Também pode ser apreciada pura, bem gelada. Para caipirinha: 50ml de cachaça, 1 limão, açúcar e gelo a gosto.";
+    return "Aprecie pura, em temperatura ambiente, para sentir todos os aromas. Sirva pequenas doses e intercale com água para limpar o paladar.";
+  }
+
   const accordionSections = [
     { key: "descricao", label: "Descrição Completa" },
+    { key: "harmonizacao", label: "Harmonização Sugerida" },
+    { key: "madeira", label: "A Madeira" },
+    { key: "consumo", label: "Sugestão de Consumo" },
     { key: "informacoes", label: "Informações do Produto" },
     { key: "frete", label: "Frete e Entrega" },
     { key: "legal", label: "Aviso Legal" },
@@ -244,11 +295,36 @@ export function ProductDetailClient() {
                   {openAccordion === section.key && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="pb-4 text-amber-100/60 text-sm font-light leading-relaxed">
                       {section.key === "descricao" && <p>{product.longDescription || product.description || "Descrição completa em breve."}</p>}
+                      {section.key === "harmonizacao" && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-amber-400 mb-2">
+                            <span className="text-lg">🍽️</span>
+                            <span className="font-medium">Combina perfeitamente com:</span>
+                          </div>
+                          <p>{getHarmonizacao()}</p>
+                        </div>
+                      )}
+                      {section.key === "madeira" && (
+                        <div className="space-y-2">
+                          {product.madeira && (
+                            <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-300 mb-2">
+                              {product.madeira}
+                            </span>
+                          )}
+                          <p>{getMadeiraStory()}</p>
+                        </div>
+                      )}
+                      {section.key === "consumo" && (
+                        <div className="space-y-2">
+                          <p>{getSugestaoConsumo()}</p>
+                        </div>
+                      )}
                       {section.key === "informacoes" && (
                         <div className="space-y-2">
                           <p><strong className="text-amber-100/80">SKU:</strong> {product.sku}</p>
-                          {product.volumeMl && <p><strong className="text-amber-100/80">Volume:</strong> {product.volumeMl}ml</p>}
+                          {product.volumeMl &&                           <p><strong className="text-amber-100/80">Volume:</strong> {product.volumeMl}ml</p>}
                           {product.alcoholPercentage && <p><strong className="text-amber-100/80">Teor Alcoólico:</strong> {product.alcoholPercentage}%</p>}
+                          {product.madeira && <p><strong className="text-amber-100/80">Madeira:</strong> {product.madeira}</p>}
                           <p><strong className="text-amber-100/80">Categoria:</strong> {product.category?.name || "—"}</p>
                         </div>
                       )}

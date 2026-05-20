@@ -44,6 +44,7 @@ const productFormSchema = z.object({
   cfop: z.string().default("5102"),
   volumeMl: z.coerce.number().int().positive().optional().or(z.literal("")),
   alcoholPercentage: z.coerce.number().positive().optional().or(z.literal("")),
+  madeira: z.string().optional(),
   weightGrams: z.coerce.number().int().positive().optional().or(z.literal("")),
   isActive: z.boolean().default(true),
   isFeatured: z.boolean().default(false),
@@ -86,6 +87,7 @@ export default function NewProductPage() {
       cfop: "5102",
       volumeMl: "",
       alcoholPercentage: "",
+      madeira: "",
       weightGrams: "",
       isActive: true,
       isFeatured: false,
@@ -159,6 +161,7 @@ export default function NewProductPage() {
       const productData: any = { ...data };
       if (productData.volumeMl === "") delete productData.volumeMl;
       if (productData.alcoholPercentage === "") delete productData.alcoholPercentage;
+      if (productData.madeira === "") productData.madeira = null;
       if (productData.weightGrams === "") delete productData.weightGrams;
       if (!productData.costPrice) delete productData.costPrice;
 
@@ -387,8 +390,30 @@ export default function NewProductPage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="description" className="text-amber-100/70">
+              <div>
+                <Label htmlFor="madeira" className="text-amber-100/70">
+                  Madeira
+                </Label>
+                <Select
+                  value={watch("madeira") || ""}
+                  onValueChange={(v) => setValue("madeira", v)}
+                >
+                  <SelectTrigger className="mt-1.5 bg-[#1a0f05] border-amber-500/20 text-amber-100">
+                    <SelectValue placeholder="Selecione o tipo de madeira" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhuma (Prata/Branca)</SelectItem>
+                    <SelectItem value="Carvalho Europeu">Carvalho Europeu</SelectItem>
+                    <SelectItem value="Carvalho Americano (Ex-Bourbon)">Carvalho Americano (Ex-Bourbon)</SelectItem>
+                    <SelectItem value="Carvalho Europeu + Amburana">Carvalho Europeu + Amburana</SelectItem>
+                    <SelectItem value="Amburana">Amburana</SelectItem>
+                    <SelectItem value="Jequitibá Rosa">Jequitibá Rosa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="description" className="text-amber-100/70">
                 Descrição Curta
               </Label>
               <Textarea

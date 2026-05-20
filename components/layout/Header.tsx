@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, User, Menu, X, Heart } from "lucide-react";
+import { ShoppingBag, User, Menu, X, Heart, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -165,6 +165,13 @@ export function Header() {
                 ))}
               </nav>
               <div className="mt-auto p-4 border-t border-amber-500/20 space-y-1">
+                <Link
+                  href={mounted && session ? "/fidelidade" : "/login"}
+                  className="flex items-center gap-3 px-4 py-3 rounded-md text-sm text-amber-100/70 hover:bg-amber-500/5 hover:text-amber-300 transition-colors"
+                >
+                  <Award className="h-4 w-4" />
+                  Fidelidade
+                </Link>
                 <Link
                   href={mounted && session ? "/favoritos" : "/login"}
                   className="flex items-center gap-3 px-4 py-3 rounded-md text-sm text-amber-100/70 hover:bg-amber-500/5 hover:text-amber-300 transition-colors"

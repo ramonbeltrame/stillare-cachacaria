@@ -32,6 +32,7 @@ model User {
   ageVerifications   AgeVerificationLog[]
   reviews            Review[]
   wishlistItems      WishlistItem[]
+  loyaltyPoints      LoyaltyPoints?
 
   @@map("users")
 }
@@ -98,6 +99,7 @@ model Product {
   cfop              String   @default("5102")
   volumeMl          Int?
   alcoholPercentage Float?
+  madeira           String?
   weightGrams       Int?
   metaTitle         String?
   metaDescription   String?
@@ -407,4 +409,34 @@ model WishlistItem {
 
   @@unique([userId, productId])
   @@map("wishlist_items")
+}
+
+model LoyaltyPoints {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  points      Int      @default(0)
+  totalEarned Int      @default(0)
+  totalSpent  Int      @default(0)
+  tier        String   @default("BRONZE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  history     LoyaltyHistory[]
+
+  @@map("loyalty_points")
+}
+
+model LoyaltyHistory {
+  id          String        @id @default(cuid())
+  loyaltyId   String
+  points      Int
+  type        String
+  description String
+  orderId     String?
+  createdAt   DateTime      @default(now())
+
+  loyalty     LoyaltyPoints @relation(fields: [loyaltyId], references: [id], onDelete: Cascade)
+
+  @@map("loyalty_history")
 }
