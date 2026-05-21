@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { sanitizeInput, apiGeneralRateLimit, getClientIp, rateLimitResponse } from "@/lib/security";
+export const dynamic = "force-dynamic";
 
 const TIER_THRESHOLDS: Record<string, { min: number; label: string; discount: number }> = {
   BRONZE: { min: 0, label: "Bronze", discount: 0 },

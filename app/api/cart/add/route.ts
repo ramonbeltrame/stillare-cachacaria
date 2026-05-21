@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import { calculateAge } from "@/lib/utils";
+export const dynamic = "force-dynamic";
 
 const addToCartSchema = z.object({
   productId: z.string().min(1),

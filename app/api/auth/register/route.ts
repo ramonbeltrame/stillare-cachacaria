@@ -6,6 +6,7 @@ import { calculateAge } from "@/lib/utils";
 import { registerRateLimit, getClientIp, sanitizeInput, rateLimitResponse, containsDangerousContent } from "@/lib/security";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { sendOrderShippedEmail } from "@/lib/email-service";
 import { sendEmail, getEmailTemplate } from "@/lib/sendgrid";
+export const dynamic = "force-dynamic";
 
 async function requireAdmin() {
   const session = await auth();

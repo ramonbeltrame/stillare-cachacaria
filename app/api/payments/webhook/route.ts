@@ -4,6 +4,7 @@ import { sendOrderConfirmationEmail } from "@/lib/email-service";
 import { emitirNFe } from "@/lib/nuvemfiscal";
 import { webhookRateLimit, getClientIp, sanitizeInput, rateLimitResponse } from "@/lib/security";
 import crypto from "crypto";
+export const dynamic = "force-dynamic";
 
 function getTierFromPoints(points: number): string {
   if (points >= 1000) return "DIAMANTE";

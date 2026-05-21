@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { generateOrderNumber } from "@/lib/utils";
 import { sendOrderConfirmationEmail } from "@/lib/email-service";
 import { sanitizeInput, apiGeneralRateLimit, getClientIp, rateLimitResponse, isValidAmount, generateTransactionReference } from "@/lib/security";
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {

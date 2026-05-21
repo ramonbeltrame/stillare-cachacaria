@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { productSchema } from "@/lib/validations";
 import { cacheHeaders } from "@/lib/cache";
+export const dynamic = "force-dynamic";
 
 // Map alcohol range to filter
 function getAlcoholRange(range: string): { gte?: number; lte?: number } | null {

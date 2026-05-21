@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
+export const dynamic = "force-dynamic";
 
 const paymentCreateSchema = z.object({
   orderId: z.string().min(1),

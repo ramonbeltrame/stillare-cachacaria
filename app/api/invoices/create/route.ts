@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { emitirNFe } from "@/lib/nuvemfiscal";
 import { z } from "zod";
+export const dynamic = "force-dynamic";
 
 const createInvoiceSchema = z.object({
   orderId: z.string().min(1),

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { apiGeneralRateLimit, getClientIp, rateLimitResponse } from "@/lib/security";
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {

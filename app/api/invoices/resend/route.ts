@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { sendInvoiceEmail } from "@/lib/email-service";
 import { z } from "zod";
+export const dynamic = "force-dynamic";
 
 const resendInvoiceSchema = z.object({
   invoiceId: z.string().min(1),

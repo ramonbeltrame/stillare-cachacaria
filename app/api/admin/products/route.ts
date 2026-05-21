@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { productSchema } from "@/lib/validations";
+export const dynamic = "force-dynamic";
 
 async function requireAdmin() {
   const session = await auth();

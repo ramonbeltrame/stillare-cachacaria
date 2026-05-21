@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { categorySchema } from "@/lib/validations";
 import { cacheHeaders } from "@/lib/cache";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {

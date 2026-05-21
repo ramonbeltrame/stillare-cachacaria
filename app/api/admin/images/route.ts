@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import fs from "fs/promises";
 import path from "path";
 import { isValidImageType, isValidImageExtension } from "@/lib/security";
+export const dynamic = "force-dynamic";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const IMAGES_DIR = path.join(process.cwd(), "public", "images");
